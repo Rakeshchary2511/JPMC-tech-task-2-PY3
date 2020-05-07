@@ -2,12 +2,15 @@ import React, { Component } from 'react';
 import DataStreamer, { ServerRespond } from './DataStreamer';
 import Graph from './Graph';
 import './App.css';
+import { ServerResponse } from 'http';
 
 /**
  * State declaration for <App />
  */
 interface IState {
   data: ServerRespond[],
+  //Adding showGraph state so that the graph only renders if the value is True.
+  showGraph:boolean,
 }
 
 /**
@@ -22,6 +25,8 @@ class App extends Component<{}, IState> {
       // data saves the server responds.
       // We use this state to parse data down to the child element (Graph) as element property
       data: [],
+      //initially making showGraph to br falsy!!
+      showGraph:false
     };
   }
 
@@ -29,18 +34,32 @@ class App extends Component<{}, IState> {
    * Render Graph react component with state.data parse as property data
    */
   renderGraph() {
-    return (<Graph data={this.state.data}/>)
+    //condition that executes only if user press the button which makes showGraph to true.
+    if(this.state.showGraph){
+      return (<Graph data={this.state.data}/>)
+    }
   }
 
   /**
    * Get new data from server and update the state with the new data
    */
   getDataFromServer() {
-    DataStreamer.getData((serverResponds: ServerRespond[]) => {
-      // Update the state by creating a new array of data that consists of
-      // Previous data in the state and the new data from server
-      this.setState({ data: [...this.state.data, ...serverResponds] });
-    });
+    /*Making use of setInterval function to contact the
+    server and get data from it continuously instead of just getting data from it
+    once every time you click the button.*/
+    let x=0;
+    const interval = setInterval(()=>{
+      DataStreamer.getData((serverResponds:ServerRespond[])=>{
+        this.setState({
+          data:serverResponds,
+          showGraph:true
+        });
+      });
+      x++;
+      if(x>1000){
+        clearInterval(interval);
+      }
+    },100);
   }
 
   /**
